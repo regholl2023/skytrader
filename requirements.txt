@@ -1,0 +1,5 @@
+alpaca-trade-api
+openai
+requests
+boto3  # For AWS services
+python-dotenv  # For managing environment variables
