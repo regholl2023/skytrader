@@ -4,23 +4,6 @@ class TradingStrategy:
     def __init__(self):
         pass
 
-    def calculate_macd(self, prices, short_window=12, long_window=26, signal_window=9):
-        short_ema = self.calculate_ema(prices, short_window)
-        long_ema = self.calculate_ema(prices, long_window)
-
-        if short_ema is None or long_ema is None:
-            return None, None, None
-
-        macd_line = np.subtract(short_ema, long_ema)
-        signal_line = self.calculate_ema(macd_line, signal_window)
-
-        if signal_line is None:
-            return None, None, None
-
-        macd_histogram = np.subtract(macd_line[-len(signal_line):], signal_line)
-
-        return macd_line, signal_line, macd_histogram
-
     def calculate_ema(self, prices, window):
         if len(prices) < window:
             return None
@@ -173,41 +156,38 @@ class TradingStrategy:
 
     def calculate_macd(self, prices, short_window=12, long_window=26, signal_window=9):
         """
-        Calculate the Moving Average Convergence Divergence (MACD) line, signal line, and MACD histogram.
+        Calculate the Moving Average Convergence Divergence (MACD) for the given price data.
 
-        :param prices: A list of historical prices (floats or integers).
-        :param short_window: The window (number of periods) for the short-term EMA. Default is 12.
-        :param long_window: The window (number of periods) for the long-term EMA. Default is 26.
-        :param signal_window: The window (number of periods) for the signal line EMA. Default is 9.
-        :return: Three lists representing the MACD line, signal line, and MACD histogram, respectively.
+        :param prices: A list of prices (floats or integers).
+        :param short_window: The short EMA window. Default is 12.
+        :param long_window: The long EMA window. Default is 26.
+        :param signal_window: The signal line EMA window. Default is 9.
+        :return: Three lists representing the MACD line, the signal line, and the MACD histogram.
         """
-        # Calculate short-term EMA
+        # Calculate short EMA
         short_ema = self.calculate_ema(prices, short_window)
-        
-        # Calculate long-term EMA with the same window size as short-term EMA
-        long_ema = self.calculate_ema(prices, short_window)  # Use short_window here
-        
-        # Debugging: Print lengths of short_ema and long_ema
-        print("Length of short_ema:", len(short_ema))
-        print("Length of long_ema:", len(long_ema))
-        
-        # Check if EMA calculations are valid
-        if short_ema is None or long_ema is None:
+
+        # Calculate long EMA
+        long_ema = self.calculate_ema(prices, long_window)
+
+        if short_ema is None or long_ema is None or len(short_ema) < signal_window or len(long_ema) < signal_window:
             return None, None, None
 
         # Calculate MACD line
-        macd_line = np.subtract(short_ema, long_ema)
-        
-        # Calculate signal line with the same window size as MACD line
-        signal_line = self.calculate_ema(macd_line, len(macd_line))  # Use length of macd_line here
-        
-        # Check if signal line calculation is valid
+        macd_line = np.subtract(short_ema[-len(long_ema):], long_ema)
+
+        # Calculate signal line
+        signal_line = self.calculate_ema(macd_line, signal_window)
+
         if signal_line is None:
             return None, None, None
-        
+
+        # Ensure MACD line and signal line have the same length for histogram calculation
+        macd_line = macd_line[-len(signal_line):]
+
         # Calculate MACD histogram
         macd_histogram = np.subtract(macd_line, signal_line)
-        
+
         return macd_line, signal_line, macd_histogram
 
 
